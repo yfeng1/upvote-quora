@@ -57,9 +57,23 @@ public class SolutionTest {
 	
 	@Test
 	public void testCalculateSolutionTestCase11() throws FileNotFoundException {
-		//testTemplate("11");
+		testTemplate("11");
 	}
 
+	@Test
+	public void testCalculateSolutionTestCase17() throws FileNotFoundException {
+		testTemplate("17");
+	}
+	@Test
+	public void testCalculateSolutionTestCase18() throws FileNotFoundException {
+		testTemplate("18");
+	}
+	@Test
+	public void testCalculateSolutionTestCase20() throws FileNotFoundException {
+		testTemplate("20");
+	}
+	
+	
 	private void testTemplate(String index) throws FileNotFoundException {
 		File testCase11_res = new File("output" + index + ".txt");
 		Scanner sc_res = new Scanner(testCase11_res); 
@@ -67,12 +81,13 @@ public class SolutionTest {
 		StringBuilder stringBuilder = new StringBuilder();
 		while(sc_res.hasNext()){
 			stringBuilder.append(sc_res.nextLine());
+			stringBuilder.append("\n");
 		}
 		sc_res.close();
 		
 		File testCase11 = new File("input" + index + ".txt");
 		Scanner sc = new Scanner(testCase11);
 		
-		Assert.assertNotSame("wront", stringBuilder.toString(), Solution.calculateAndPrintResults(sc));
+		Assert.assertEquals(stringBuilder.toString(), Solution.calculateAndPrintResults(sc));
 	}
 }
