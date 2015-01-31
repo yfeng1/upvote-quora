@@ -1,6 +1,7 @@
 package upvote;
 import java.util.*;
 
+
 public class Solution {
 	static int size_all;
 	static int size_of_window;
@@ -55,15 +56,12 @@ public class Solution {
         
         sc.nextLine();
         State[] first_line_result = new State[size_all-1];
-        //System.out.println("size_all_data-size_of_window: " + (size_all_data-size_of_window) + "size_all_data :" + size_all_data);
         
         int[] allOutPut = new int[size_all-size_of_window + 1];
         int first_int = sc.nextInt();
-        int i=0;
         for ( int j= 1; j < size_all; j++){
             int second_int = sc.nextInt();
             State result_t = State.NON_SENSE;
-            //System.out.println("first_int:" + first_int + "second_int :" + second_int);
             if (first_int > second_int) {
                 result_t = State.MOINS;
             } else if (first_int == second_int) {
@@ -75,23 +73,47 @@ public class Solution {
             if (result_t == State.NON_SENSE) {
             	throw new IllegalArgumentException("NON SENSE OPERATION");
             }
-            
-            first_line_result[i] = result_t;
-            
-            //System.out.println("i:" + i + "res :" + allResult[0][i]);
+            first_line_result[j-1] = result_t;
             first_int = second_int;
-            i++;
         }
         
         // The first line is calculated.
-        
         sc.close();
-        for(int outIndex=0; outIndex<=(size_all - size_of_window);outIndex++) {
-        	allOutPut[outIndex] = calculateSumFromFirstLine(outIndex, Arrays.copyOfRange(first_line_result, outIndex,  outIndex + size_of_window - 1));
-        }
+        
+        if (size_of_window == 1) {
+        	for (int i =0 ; i < first_line_result.length ; i++){
+        		allOutPut[i]=getValueToSum(first_line_result[i]);
+        	}
+		} else {
+			// first step, first window, we calculate from the bottom
+			// 1  1 -1  0
+			//  1  X -1
+			//   X  X
+			//    X
+			State[] currentWindow = Arrays.copyOfRange(first_line_result, 0,  0 + size_of_window - 1);
+			State[] leftColumnOutPut = new State[size_of_window - 1];
+			State[] rightColumnOutput = new State[size_of_window - 1];
+			allOutPut[0] = calculateSumFromFirstLineForFirstWindow(currentWindow, leftColumnOutPut, rightColumnOutput);
+			int sum = allOutPut[0];
+			// for all other steps, we use the right column of value, and the new one to do the calcul
+			for(int outIndex=1; outIndex < (size_all - size_of_window);outIndex++) {
+				State[] currentRightColumnOutput = new State[size_of_window -1];
+				currentRightColumnOutput[0] = first_line_result[outIndex + size_of_window];
+				sum += getValueToSum(currentRightColumnOutput[0]);
+				sum -= getValueToSum(leftColumnOutPut[0]);
+				for (int line = 1 ; line < size_of_window -1; line ++) {
+					currentRightColumnOutput[line] = State.ope(rightColumnOutput[line-1],currentRightColumnOutput[line-1]);
+					sum += getValueToSum(currentRightColumnOutput[line]);
+					sum -= getValueToSum(leftColumnOutPut[line]);
+				}
+				sum -= getValueToSum(leftColumnOutPut[size_of_window - 2]);
+				allOutPut[outIndex] = sum;
+			}
+		}
+        
             
         StringBuilder stringBuilder = new StringBuilder();
-        for (int output = 0; output <=size_all-size_of_window; output++){
+        for (int output = 0; output <= size_all-size_of_window; output++){
             stringBuilder.append(allOutPut[output]);
             stringBuilder.append("\n");
         }
@@ -99,36 +121,42 @@ public class Solution {
         return stringBuilder.toString();
 	}
 
-	private static int calculateSumFromFirstLine(int outIndex, State[] resultStates) {
-//		State[][] allResult = new State[size_of_window][size_of_window];
-//		int sum = 0;
-//		if (size_of_window > 1){
-//		    for (int line=1;line<(size_of_window-1);line++){
-//		        for (int index=outIndex;index<(size_of_window-line-1+outIndex);index++){
-//		            allResult[line][index] = State.ope(allResult[line-1][index],allResult[line-1][index+1] ) ;   
-//		            sum+=allResult[line][index]== State.STOP ? 0 :allResult[line][index].getValue();
-//		            //System.out.println("j:" + j + "k" + k + " res " + allResult[j][k]);
-//		        }
-//		    }    
-//		}
-//		return sum;
+
+	private static int calculateSumFromFirstLineForFirstWindow(State[] resultStates, State[] leftColumnOutput, State[] rightColumnOutput) {
 		int sum = 0;
-		if (size_of_window == 1) {
-			return getValueToSum(resultStates[0]);
-		} else {
-			State[] currentLine = resultStates;
-			State[] nextLine = new State[currentLine.length - 1];
-			while (nextLine.length > 0) {
-				for (int i = 0 ; i < nextLine.length ; i++){
-					sum += getValueToSum(currentLine[i]);
-					nextLine[i] = State.ope(currentLine[i],currentLine[i+1] ) ;
-				}
-				sum +=getValueToSum(currentLine[currentLine.length-1]);
-				currentLine = nextLine;
+		State[] currentLine = resultStates;
+		State[] nextLine = new State[currentLine.length - 1];
+		int line = 0;
+//		rightColumnOutput[line] = currentLine[currentLine.length-1];
+//		leftColumnOutput[line++] = currentLine[0]; 
+		while (currentLine.length > 0) {
+			// CURRENT LINE 1 -1  0
+			// NEXT LINE     X  -1
+			
+			// NEXT LINE       X
+			for (int i = 0 ; i < currentLine.length-1 ; i++){
+				sum += getValueToSum(currentLine[i]);
+				nextLine[i] = State.ope(currentLine[i],currentLine[i+1] ) ;
+			}
+			rightColumnOutput[line] = currentLine[currentLine.length-1];
+			leftColumnOutput[line++] = currentLine[0];
+			sum +=getValueToSum(currentLine[currentLine.length-1]);
+			currentLine = nextLine;
+			if (currentLine.length > 0) {
 				nextLine = new State[currentLine.length - 1];
 			}
-			return sum;
 		}
+		// last two lines
+//		sum+=getValueToSum(currentLine[0]);
+//		sum+=getValueToSum(currentLine[1]);
+//		State lastValueAtTop = State.ope(currentLine[0],currentLine[1] );
+//		sum+=getValueToSum(lastValueAtTop);
+//		rightColumnOutput[line] = currentLine[1];
+//		leftColumnOutput[line++] = currentLine[0];
+//		leftColumnOutput[line] = lastValueAtTop;
+		//sum+=getValueToSum(currentLine[0]);
+		//leftColumnOutput[line] = currentLine[0];
+		return sum;
 	}
 
 	private static int getValueToSum(State state) {
